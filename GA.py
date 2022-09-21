@@ -1,6 +1,6 @@
 import random
 import math
-
+import csv
 
 
 def read_tspfile():
@@ -127,35 +127,50 @@ first = record_distance  # 1番優秀
 
 
 gen = 0
-while True:
-    print(record_distance)
-    #print(best.citynums)
-    population.sort(key=Route.calc_distance)
-    population = population[:POP_N]  # 最長経路は淘汰
+
+
+
+with open('GA_result.csv','w') as fout:
     
-    distance1 = population[0].calc_distance()  # 最短経路
+    csvout = csv.writer(fout)
+    result = []
     
-    if distance1 < record_distance:
-        record_distance = distance1
-        best = population[0]
-    
-    for i in range(len(cities_data)):
-        A,B = random.sample(population,2)
-        child = A.crossover(B)
-        population.append(child)
-    
-    for i in range(3,len(cities_data)):
-        if i < len(cities_data):
-            best_from_new = best.mutateN()
-            population.append(best_from_new)
-    
-    for i in range(3,len(cities_data)):
-        if i < len(cities_data):
-            other_from_new = random.choice(population)
-            other_from_new = other_from_new.mutateN()
-            population.append(other_from_new)
-    gen+=1
-    if gen == 1000:
-        print(best.citynums)
-        break
+    while True:
+        print(record_distance)
+        #print(best.citynums)
+        population.sort(key=Route.calc_distance)
+        population = population[:POP_N]  # 最長経路は淘汰
+        
+        distance1 = population[0].calc_distance()  # 最短経路
+        
+        if distance1 < record_distance:
+            record_distance = distance1
+            best = population[0]
+        
+        for i in range(len(cities_data)):
+            A,B = random.sample(population,2)
+            child = A.crossover(B)
+            population.append(child)
+        
+        for i in range(3,len(cities_data)):
+            if i < len(cities_data):
+                best_from_new = best.mutateN()
+                population.append(best_from_new)
+        
+        for i in range(3,len(cities_data)):
+            if i < len(cities_data):
+                other_from_new = random.choice(population)
+                other_from_new = other_from_new.mutateN()
+                population.append(other_from_new)
+        gen+=1
+        if gen == 1 or gen%100 == 0:
+            data = []
+            data.extend([gen,record_distance])
+            result.append(data)
+            if gen == 500:
+                csvout.writerows(result)
+                print(best.citynums)
+                break
+
+
 
