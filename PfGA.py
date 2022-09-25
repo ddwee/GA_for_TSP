@@ -46,6 +46,7 @@ cities = []  # Cityオブジェクトを入れるリスト
 CITIES_N = len(cities_data)  # 都市数
 
 
+
 class City:
     def __init__(self,num,X,Y):
         self.num = num
@@ -86,7 +87,7 @@ class Route:
         c1 = self.copy_gene(p1)
         c2 = self.copy_gene(p2)
         for i in range(len(c1)):
-            if random.rand() < 0.5:
+            if random.random() > 0.5:
                 c1[i], c2[i] = c2[i], c1[i]
                 
         mutated_c1, mutated_c2 = self.mutate(c1,c2)
@@ -95,7 +96,7 @@ class Route:
    
     
     def mutate(self,c1,c2,mutate_rate=0.05):
-        if random.rand() < mutate_rate:
+        if random.random() > mutate_rate:
             if random.random() > 0.5:
                 select_num = [i for i in range(c1)]
                 select_index = random.sample(select_num, 2)
@@ -118,9 +119,9 @@ class Route:
     
     
     # citiesとpopulationを混同しないように注意
-    def pfga():
+    def pfga(self):
 
-        # 2未満なら追加
+        # 2未満なら追加。これだけだとランダムに2こ取り出す動作でエラー吐く。別途初期集団は作っておく
         if len(population) < 2:
             population.append(Route())
 
@@ -166,6 +167,54 @@ class Route:
             population.append(Route())
         else:
             raise ValueError("not comming")
+        
+        
+        # 経路長と最短経路を返す
+        population.sort(key=Route.calc_distance)
+        best = population[0]  # 最短経路
+        record_distance = best.calc_distance()
+        
+        return record_distance,best
+        
+
+# citiesにCityオブジェクトを入れる
+for i in range(CITIES_N):
+    cities.append(City(cities_data[i][0],
+                       cities_data[i][1],
+                       cities_data[i][2]))  # num,X,Yの順
 
 
+# populationに個体を追加
+for i in range(2):
+    population.append(Route())
+
+
+generation = 0
+start = Route()
+champ_dist = start.calc_distance()  # 経路長
+champ_route = None  # 経路
+
+
+with open('PfGA_result.csv','w') as fout:
+    
+    csvout = csv.writer(fout)
+    result = []
+    
+    while True:
+        challenger = start.pfga()
+        
+        if challenger < champ_dist:
+            champ_dist = challenger[0]
+            champ_route = challenger[1]
+        
+        generation += 1
+        
+        if generation == 1 or generation%100 == 0:
+            data = []
+            data.extend([generation,champ_dist])
+            result.append(data)
+            if generation == 500:
+                csvout.writerows(result)
+                print(champ_route.citynums)
+                break
 
