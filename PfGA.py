@@ -84,9 +84,9 @@ class Route:
     
     def crossover(self, p1, p2):
         # 子の遺伝子情報
-        c1 = self.copy_gene(p1)
-        c2 = self.copy_gene(p2)
-        for i in range(len(c1)):
+        c1 = self.copy_route(p1)
+        c2 = self.copy_route(p2)
+        for i in range(CITIES_N):
             if random.random() > 0.5:
                 c1[i], c2[i] = c2[i], c1[i]
                 
@@ -95,6 +95,7 @@ class Route:
         return mutated_c1,mutated_c2
    
     
+    # 一様交叉
     def mutate(self,c1,c2,mutate_rate=0.05):
         if random.random() > mutate_rate:
             if random.random() > 0.5:
@@ -117,65 +118,59 @@ class Route:
         
         return c1,c2
     
+
+def pfga():
+
+    # 2未満なら追加。これだけだとランダムに2こ取り出す動作でエラー吐く。別途初期集団は作っておく
+    if len(population) < 2:
+        population.append(Route())
+
+    # ランダムに2個取り出す
+    p1 = population.pop(random.randint(0, len(population)-1))
+    p2 = population.pop(random.randint(0, len(population)-1))
+
+    # 子を作成
+    r = Route()
+    c1, c2 = r.crossover(p1,p2)
+
+    if p1.calc_distance() < p2.calc_distance():
+        p_min = p1
+        p_max = p2
+    else:
+        p_min = p2
+        p_max = p1
+    if c1.calc_distance() < c2.calc_distance():
+        c_min = c1
+        c_max = c2
+    else:
+        c_min = c2
+        c_max = c1
+
+    if c_min.calc_distance() >= p_max.calc_distance():
+        # 子2個体がともに親の2個体より良かった場合
+        # 子2個体及び適応度の良かった方の親個体計3個体が局所集団に戻り、局所集団数は1増加する。
+        population.append(c1)
+        population.append(c2)
+        population.append(p_max)
+    elif p_min.calc_distance() >= c_max.calc_distsnce():
+        # 子2個体がともに親の2個体より悪かった場合
+        # 親2個体のうち良かった方のみが局所集団に戻り、局所集団数は1減少する。
+        population.append(p_max)
+    elif p_max.calc_distance() >= c_max.calc_distance() and p_min.calc_distance() <= c_max.calc_distance():
+        # 親2個体のうちどちらか一方のみが子2個体より良かった場合
+        # 親2個体のうち良かった方と子2個体のうち良かった方が局所集団に戻り、局所集団数は変化しない。
+        population.append(c_max)
+        population.append(p_max)
+    elif c_max.calc_distance() >= p_max.calc_distance() and c_min.calc_distance() <= p_max.calc_distance():
+        # 子2個体のうちどちらか一方のみが親2個体より良かった場合
+        # 子2個体のうち良かった方のみが局所集団に戻り、全探索空間からランダムに1個体選んで局所集団に追加する。局所集団数は変化しない。
+        population.append(c_max)
+        population.append(Route())
+    else:
+        raise ValueError("not comming")
     
-    # citiesとpopulationを混同しないように注意
-    def pfga(self):
-
-        # 2未満なら追加。これだけだとランダムに2こ取り出す動作でエラー吐く。別途初期集団は作っておく
-        if len(population) < 2:
-            population.append(Route())
-
-        # ランダムに2個取り出す
-        p1 = population.pop(random.randint(0, len(population)-1))
-        p2 = population.pop(random.randint(0, len(population)-1))
-
-        # 子を作成
-        c1, c2 = Route.crossover(p1, p2)
-
-        if p1.calc_distance() < p2.calc_distance():
-            p_min = p1
-            p_max = p2
-        else:
-            p_min = p2
-            p_max = p1
-        if c1.calc_distance() < c2.calc_distance():
-            c_min = c1
-            c_max = c2
-        else:
-            c_min = c2
-            c_max = c1
-
-        if c_min.calc_distance() >= p_max.calc_distance():
-            # 子2個体がともに親の2個体より良かった場合
-            # 子2個体及び適応度の良かった方の親個体計3個体が局所集団に戻り、局所集団数は1増加する。
-            population.append(c1)
-            population.append(c2)
-            population.append(p_max)
-        elif p_min.calc_distance() >= c_max.calc_distsnce():
-            # 子2個体がともに親の2個体より悪かった場合
-            # 親2個体のうち良かった方のみが局所集団に戻り、局所集団数は1減少する。
-            population.append(p_max)
-        elif p_max.calc_distance() >= c_max.calc_distance() and p_min.calc_distance() <= c_max.calc_distance():
-            # 親2個体のうちどちらか一方のみが子2個体より良かった場合
-            # 親2個体のうち良かった方と子2個体のうち良かった方が局所集団に戻り、局所集団数は変化しない。
-            population.append(c_max)
-            population.append(p_max)
-        elif c_max.calc_distance() >= p_max.calc_distance() and c_min.calc_distance() <= p_max.calc_distance():
-            # 子2個体のうちどちらか一方のみが親2個体より良かった場合
-            # 子2個体のうち良かった方のみが局所集団に戻り、全探索空間からランダムに1個体選んで局所集団に追加する。局所集団数は変化しない。
-            population.append(c_max)
-            population.append(Route())
-        else:
-            raise ValueError("not comming")
         
-        
-        # 経路長と最短経路を返す
-        population.sort(key=Route.calc_distance)
-        best = population[0]  # 最短経路
-        record_distance = best.calc_distance()
-        
-        return record_distance,best
-        
+
 
 # citiesにCityオブジェクトを入れる
 for i in range(CITIES_N):
@@ -190,9 +185,10 @@ for i in range(2):
 
 
 generation = 0
-start = Route()
-champ_dist = start.calc_distance()  # 経路長
-champ_route = None  # 経路
+best_route = random.choice(population)  # 個体(経路)
+best_dist = best_route.calc_distance()  # 距離
+first = best_dist  # 1番優秀
+
 
 
 with open('PfGA_result.csv','w') as fout:
@@ -201,20 +197,23 @@ with open('PfGA_result.csv','w') as fout:
     result = []
     
     while True:
-        challenger = start.pfga()
+        pfga()
         
-        if challenger < champ_dist:
-            champ_dist = challenger[0]
-            champ_route = challenger[1]
+        population.sort(key=Route.calc_distance)
+        dist1 = population[0].calc_distance()
+        
+        if dist1 < best_dist:
+            best_dist = dist1
+            best_route = population[0]
         
         generation += 1
         
         if generation == 1 or generation%100 == 0:
             data = []
-            data.extend([generation,champ_dist])
+            data.extend([generation,best_dist])
             result.append(data)
             if generation == 500:
                 csvout.writerows(result)
-                print(champ_route.citynums)
+                print(best_route.citynums)
                 break
 
