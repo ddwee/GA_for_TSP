@@ -6,7 +6,7 @@
 def str2float(cities):
     """ [[str,str],[str]] → [[float,float],[float]] """
     
-    data = [[0]]*len(cities)
+    data = [0]*len(cities)
     
     for i in range(len(cities)):
         city = [0]*len(cities[i])
@@ -15,7 +15,7 @@ def str2float(cities):
             for j in range(len(cities[i])):
                 data[i][j] = float(cities[i][j])
         except:
-            data[i]*=0
+            data[i]=None
             continue
     
     data2 = list(filter(None,data))
@@ -32,7 +32,7 @@ def remove_blank(cities):
                 continue
     
 
-with open("ali535.tsp","r") as fin:
+with open("att48.tsp","r") as fin:
     data = [city.split(' ') for city in fin.read().splitlines()]
     
     remove_blank(data)
