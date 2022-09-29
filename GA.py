@@ -1,6 +1,7 @@
 import random
 import math
 import csv
+import time
 
 
 def read_tspfile():
@@ -9,7 +10,7 @@ def read_tspfile():
     [[都市番号,X,Y],[...],...] の形で返す
     """
     def str2float(cities):
-        data = [[0]]*len(cities)
+        data = [0]*len(cities)
         for i in range(len(cities)):
             city = [0]*len(cities[i])
             data[i] = city
@@ -17,7 +18,7 @@ def read_tspfile():
                 for j in range(len(cities[i])):
                     data[i][j] = float(cities[i][j])
             except:
-                data[i]*=0
+                data[i]=None
                 continue
         data2 = list(filter(None,data))
         return data2
@@ -30,7 +31,7 @@ def read_tspfile():
                 except:
                     continue
     
-    with open("a280.tsp","r") as fin:
+    with open("att48.tsp","r") as fin:
         data = [city.split(' ') for city in fin.read().splitlines()]
         remove_blank(data)
         cities_data = str2float(data)
@@ -108,6 +109,10 @@ class Route:
         return child
 
 
+# 時間計測開始
+start = time.perf_counter()
+
+
 # citiesに読み込んだ座標を持つCityオブジェクトを入れる
 for i in range(len(cities_data)):
     cities.append(City(cities_data[i][0],
@@ -121,8 +126,6 @@ for i in range(POP_N):
 
 best = random.choice(population)  # 個体(経路)
 record_distance = best.calc_distance()  # 距離
-first = record_distance  # 1番優秀
-
 
 
 
@@ -163,13 +166,19 @@ with open('GA_result.csv','w') as fout:
                 other_from_new = other_from_new.mutateN()
                 population.append(other_from_new)
         gen+=1
-        if gen == 1 or gen%100 == 0:
+        if gen == 1 or gen%10 == 0:
             data = []
             data.extend([gen,record_distance])
             result.append(data)
             if gen == 500:
                 csvout.writerows(result)
                 print(best.citynums)
+                
+                
+                # 時間計測終了(秒)
+                end = time.perf_counter()
+                tim = end - start
+                print(tim)
                 break
 
 
