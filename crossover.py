@@ -32,7 +32,7 @@ def read_tspfile():
                 except:
                     continue
     
-    with open("a280.tsp","r") as fin:
+    with open("att48.tsp","r") as fin:
         data = [city.split(' ') for city in fin.read().splitlines()]
         remove_blank(data)
         cities_data = str2float(data)
@@ -109,10 +109,24 @@ def crossover(p1, p2):
     # 子の遺伝子情報
     c1 = copy_route(p1)
     c2 = copy_route(p2)
-    for i in range(CITIES_N):
-        if random.random() > 0.5:
-            c1.citynums[i], c2.citynums[i] = c2.citynums[i], c1.citynums[i]
-            
+    # 切り離す位置をランダムに選択
+    index = random.randint(1,len(cities_data)-2)
+    # indexの前までは自身の経路
+    #indexの後からは相方のリスト(index前の都市と重複しないように)
+    fragment_c1 = c1.citynums[:index]
+    fragment_c2 = c2.citynums[:index]
+    # どっちかを反転
+    if random.random() > 0.5:
+        fragment_c1 = c1.citynums[::-1]
+    else:
+        fragment_c2 = c2.citynums[::-1]
+    
+    notinslice_c1 = [X for X in fragment_c2 if X not in c1.citynums]
+    notinslice_c2 = [X for X in fragment_c1 if X not in c2.citynums]
+    #リストを合体
+    c1.citynums += notinslice_c1
+    c2.citynums += notinslice_c2
+    
     mutated_c1, mutated_c2 = mutate(c1,c2)
     
     return mutated_c1,mutated_c2
@@ -130,6 +144,13 @@ for i in range(2):
     population.append(Route())
 
 
+# リストの要素に重複があればTrueを返す
+def has_duplicates(seq):
+    return len(seq) != len(set(seq))
+
+
+#print(population[0].citynums,population[1].citynums)
 c1,c2 = crossover(population[0],population[1])
-print(population[0].calc_distance(),population[1].calc_distance())
-print(c1.calc_distance(),c2.calc_distance())
+print(c1.citynums,c2.citynums)
+print(has_duplicates(c1.citynums),has_duplicates(c2.citynums))
+print(len(c1.citynums),len(c2.citynums))
