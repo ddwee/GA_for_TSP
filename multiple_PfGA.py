@@ -80,6 +80,10 @@ class Route:
         return self.distance
 
 
+async def give2calc_dist(Route_obj):
+    return Route_obj.calc_distance()
+
+
 async def copy_route(route):
     return copy.deepcopy(route)
 
@@ -142,35 +146,35 @@ async def pfga():
     # 子を作成
     c1, c2 = await crossover(p1,p2)
 
-    if p1.calc_distance() < p2.calc_distance():
+    if await give2calc_dist(p1) < await give2calc_dist(p2):
         p_good = p1  # 短い経路(優秀)
         p_bad = p2  # 長い経路(淘汰される)
     else:
         p_good = p2
         p_bad = p1
-    if c1.calc_distance() < c2.calc_distance():
+    if await give2calc_dist(c1) < await give2calc_dist(c2):
         c_good = c1
         c_bad = c2
     else:
         c_good = c2
         c_bad = c1
 
-    if c_bad.calc_distance() <= p_good.calc_distance():
+    if await give2calc_dist(c_bad) <= await give2calc_dist(p_good):
         # 子2個体がともに親の2個体より良かった場合
         # 子2個体及び適応度の良かった方の親個体計3個体が局所集団に戻り、局所集団数は1増加する。
         population.append(c1)
         population.append(c2)
         population.append(p_good)
-    elif p_bad.calc_distance() <= c_good.calc_distance():
+    elif await give2calc_dist(p_bad) <= await give2calc_dist(c_good):
         # 子2個体がともに親の2個体より悪かった場合
         # 親2個体のうち良かった方のみが局所集団に戻り、局所集団数は1減少する。
         population.append(p_good)
-    elif p_good.calc_distance() <= c_good.calc_distance() and p_bad.calc_distance() >= c_good.calc_distance():
+    elif await give2calc_dist(p_good) <= await give2calc_dist(c_good) and await give2calc_dist(p_bad) >= await give2calc_dist(c_good):
         # 親2個体のうちどちらか一方のみが子2個体より良かった場合
         # 親2個体のうち良かった方と子2個体のうち良かった方が局所集団に戻り、局所集団数は変化しない。
         population.append(c_good)
         population.append(p_good)
-    elif c_good.calc_distance() <= p_good.calc_distance() and c_bad.calc_distance() >= p_good.calc_distance():
+    elif await give2calc_dist(c_good) <= await give2calc_dist(p_good) and await give2calc_dist(c_bad) >= await give2calc_dist(p_good):
         # 子2個体のうちどちらか一方のみが親2個体より良かった場合
         # 子2個体のうち良かった方のみが局所集団に戻り、全探索空間からランダムに1個体選んで局所集団に追加する。局所集団数は変化しない。
         population.append(c_good)
@@ -179,7 +183,7 @@ async def pfga():
         raise ValueError("not comming")
 
 
-async def main(generation=50000):
+async def main():
     # citiesに読み込んだ座標を持つCityオブジェクトを入れる
     for i in range(CITIES_N):
         cities.append(City(cities_data[i][0],
@@ -191,38 +195,42 @@ async def main(generation=50000):
         population.append(Route())
     
     best = random.choice(population)  # 個体(経路)
-    record_distance = best.calc_distance()  # 距離
+    record_distance = await give2calc_dist(best)  # 距離
     
     with open('asyncio_PfGA_result.csv','w') as fout:
         
         csvout = csv.writer(fout)
         result = []
         
-        for i in range(generation):
+        for i in range(50001):
             print(record_distance)
             population.sort(key=Route.calc_distance)
-            distance1 = population[0].calc_distance()  # 最短経路
+            distance1 = await give2calc_dist(population[0])  # 最短経路
             
             if distance1 < record_distance:
                 record_distance = distance1
                 best = population[0]  # 最短経路を更新
                 
-            task1 = asyncio.create_task(pfga())
-            task2 = asyncio.create_task(pfga())
+            coro_obj = pfga()
+            loop = asyncio.get_event_loop()
+            task = loop.create_task(coro_obj)
             
-            await task1
-            await task2
+            await task
+            #await task2
             
-            if generation == 1 or generation%100 == 0:
+            if i == 1 or i%100 == 0:
                 data = []
                 data.extend([record_distance])
                 result.append(data)
-                if i == generation:
+                if i == 50000:
                     csvout.writerows(result)
                     print(best.citynums)
                     
-asyncio.run(main())
 
+start = time.time()
+asyncio.run(main())
+end = time.time()
+print(end-start)
     
 
     
