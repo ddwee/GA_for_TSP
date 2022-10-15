@@ -127,9 +127,9 @@ def crossover(p1, p2):
     c1.citynums += notinslice_c1
     c2.citynums += notinslice_c2
     
-    mutated_c1, mutated_c2 = mutate(c1,c2)
+    #mutated_c1, mutated_c2 = mutate(c1,c2)
     
-    return mutated_c1,mutated_c2
+    return c1,c2
 
 
 # citiesに読み込んだ座標を持つCityオブジェクトを入れる
@@ -143,6 +143,9 @@ for i in range(CITIES_N):
 for i in range(2):
     population.append(Route())
 
+# ランダムに2個取り出す
+p1 = population.pop(random.randint(0, len(population)-1))
+p2 = population.pop(random.randint(0, len(population)-1))
 
 # リストの要素に重複があればTrueを返す
 def has_duplicates(seq):
@@ -150,7 +153,8 @@ def has_duplicates(seq):
 
 
 #print(population[0].citynums,population[1].citynums)
-c1,c2 = crossover(population[0],population[1])
-print(c1.citynums,c2.citynums)
-print(has_duplicates(c1.citynums),has_duplicates(c2.citynums))
-print(len(c1.citynums),len(c2.citynums))
+c1,c2 = crossover(p1,p2)
+print(p1.citynums)
+print(p2.citynums)
+print(c1.citynums)
+print(c2.citynums)
