@@ -1,6 +1,6 @@
 """
 tsplibの最適解ファイルを読み込み、最短経路長を計算する
-都市番号を0からスタートにしてくれマジで
+.tourファイルの末尾、-1を削除しておくこと
 
 ----
 計算した最適解一覧
@@ -9,7 +9,13 @@ a280  2586.769647563161
 
 att48  33523.70850743559
 
+gr666  3952.5357015796094
 
+kroA100  21285.44318157108
+
+berlin52  7544.365901904087
+
+ch150  6532.280933145756
 ----
 
 """
@@ -50,7 +56,7 @@ def read_tspfile():
                 except:
                     continue
     
-    with open("att48.tsp","r") as fin:
+    with open("berlin52.tsp","r") as fin:
         data = [city.split(' ') for city in fin.read().splitlines()]
         remove_blank(data)
         cities_data = str2float(data)
@@ -80,7 +86,7 @@ def read_tourfile():
                 except:
                     continue
     
-    with open("att48.opt.tour","r") as fin:
+    with open("berlin52.opt.tour","r") as fin:
         data = [city.split(' ') for city in fin.read().splitlines()]
         remove_blank(data)
         tour_data = str2float(data)
@@ -138,11 +144,10 @@ def minus1(x):
         return y
 
 
-a280 = Route()
-
 test = Route()
 tour2 = list(map(minus1,tour))
-a280.citynums = tour2
+test.citynums = tour2
 
+print(cities_data)
 print(tour2)
-print(a280.calc_distance())
+print(test.calc_distance())
