@@ -13,7 +13,7 @@ def read_tspfile():
     [[都市番号,X,Y],[...],...] の形で返す
     """
     def str2float(cities):
-        data = [[0]]*len(cities)
+        data = [0]*len(cities)
         for i in range(len(cities)):
             city = [0]*len(cities[i])
             data[i] = city
@@ -21,7 +21,7 @@ def read_tspfile():
                 for j in range(len(cities[i])):
                     data[i][j] = float(cities[i][j])
             except:
-                data[i]*=0
+                data[i]=None
                 continue
         data2 = list(filter(None,data))
         return data2
@@ -84,47 +84,94 @@ def copy_route(route):
     return copy.deepcopy(route)
 
 
-def mutate(c):
+def mutate(ind):
+    c = Route()
+    c.citynums = ind.citynums[::]
+    mini, maxi = sorted(random.sample(range(CITIES_N),2))
+    #print(mini,maxi)
+    c.citynums[mini:maxi+1] = c.citynums[mini:maxi+1][::-1]
+    return c
+
+
+def mutate2(ind):
+    c = Route()
+    c.citynums = ind.citynums[::]
     select_num = [i for i in range(len(c.citynums))]
     select_index = random.sample(select_num, 2)
+    #print(select_index)
     
     a = c.citynums[select_index[0]]
     b = c.citynums[select_index[1]]
+
     c.citynums[select_index[1]] = a
     c.citynums[select_index[0]] = b
-
     return c
 
 
 def crossover(p1, p2):
-    # 子の遺伝子情報
-    c1 = copy_route(p1)
-    c2 = copy_route(p2)
-    # 切り離す位置をランダムに選択
-    index = random.randint(1,len(cities_data)-2)
-    # indexの前までは自身の経路
-    #indexの後からは相方のリスト(index前の都市と重複しないように)
-    fragment_c1 = c1.citynums[:index]
-    fragment_c2 = c2.citynums[:index]
-    
-    
-    
-    notinslice_c1 = [X for X in c2.citynums if X not in fragment_c1]
-    notinslice_c2 = [X for X in c1.citynums if X not in fragment_c2]
-    
-    #リストを合体
-    a = fragment_c1 + notinslice_c1
-    b = fragment_c2 + notinslice_c2
-    c1.citynums = a
-    c2.citynums = b
-    
-    if random.random() > 0.5:
-        c1 = mutate(c1)
-    else:
-        c2 = mutate(c2)
-    
-    return c1,c2
+    size = CITIES_N
 
+    # Choose random start/end position for crossover
+    c1, c2 = [-1] * size, [-1] * size
+    start, end = sorted([random.randrange(size) for _ in range(2)])
+
+    # Replicate mum's sequence for alice, dad's sequence for bob
+    c1_inherited = []
+    c2_inherited = []
+    for i in range(start, end + 1):
+        c1[i] = p1.citynums[i]
+        c2[i] = p2.citynums[i]
+        c1_inherited.append(p1.citynums[i])
+        c2_inherited.append(p2.citynums[i])
+
+    #Fill the remaining position with the other parents' entries
+    current_p1_position, current_p2_position = 0, 0
+
+    fixed_pos = list(range(start, end + 1))       
+    i = 0
+    while i < size:
+        if i in fixed_pos:
+            i += 1
+            continue
+
+        test_c1 = c1[i]
+        if test_c1==-1: #to be filled
+            p2_trait = p2.citynums[current_p2_position]
+            while p2_trait in c1_inherited:
+                current_p2_position += 1
+                p2_trait = p2.citynums[current_p2_position]
+            c1[i] = p2_trait
+            c1_inherited.append(p2_trait)
+            
+        test_c2 = c2[i]
+        if test_c2==-1: #to be filled
+            p1_trait = p1.citynums[current_p1_position]
+            while p1_trait in c2_inherited:
+                current_p1_position += 1
+                p1_trait = p1.citynums[current_p1_position]
+            c2[i] = p1_trait
+            c2_inherited.append(p1_trait)
+
+        #repeat block for bob and mom
+        i +=1
+    ind1 = Route()
+    ind2 = Route()
+    ind1.citynums = c1
+    ind2.citynums = c2
+    
+    mutate_probablity = np.random.rand()
+    if mutate_probablity > 0.5:
+        if mutate_probablity < 0.95:
+            ind1 = mutate(ind1)
+        else:
+            ind1 = mutate2(ind1)
+    else:
+        if mutate_probablity > 0.05:
+            ind2 = mutate(ind2)
+        else:
+            ind2 = mutate2(ind2)
+
+    return ind1, ind2
 
 def pfga():
 
@@ -197,6 +244,7 @@ record_distance = best.calc_distance()  # 距離
 gen = 0  # 世代カウント用
 a280 = 2586.76964756316  # a280の最適解
 att48 = 33523.7085074355  # att48の最適解
+kroA100 = 21285.44318157108
 
 
 with open('普通のPfGA_result.csv','w') as fout:
@@ -222,7 +270,7 @@ with open('普通のPfGA_result.csv','w') as fout:
         
         gen+=1
         # 終了条件：誤差率が--になるまで
-        if (record_distance - a280)/record_distance <= 0.3:
+        if (record_distance - a280)/record_distance <= 0.15:
             csvout.writerows(result)
             print(best.citynums)
             
